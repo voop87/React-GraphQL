@@ -1,3 +1,7 @@
+const depthLimit = require('graphql-depth-limit');
+const { createComplexityLimitRule } = require('graphql-validation-complexity');
+const cors = require('cors');
+const helmet = require('helmet');
 const express = require('express');
 const { ApolloServer } = require('apollo-server-express');
 require('dotenv').config();
@@ -14,6 +18,10 @@ const port = process.env.PORT || 4000;
 const DB_HOST = process.env.DB_HOST;
 
 const app = express();
+// применяем методы безопасности от промежуточного ПО Helmet
+app.use(helmet());
+// разрешаем выполнение запросов разными источниками из всех доменов
+app.use(cors());
 // Подключаем БД 
  db.connect(DB_HOST);
 
@@ -21,6 +29,8 @@ const app = express();
 const server = new ApolloServer({ 
 	typeDefs,
 	resolvers,
+	//Добавляем допзащиту запросов на лимит вложенности
+	validationRules: [depthLimit(5), createComplexityLimitRule(1000)],
 	context: ({ req }) => {
 		// Получаем токен пользователя из заголовков
 		const token = req.headers.authorization;
